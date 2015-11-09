@@ -96,11 +96,30 @@ def gradient_descent(X,Y,w1,w2,rate,lam):
 			dldw2 += d2
 			error += e
 		
-		dldw1 += lam*np.multiply(w1,w1)
-		dldw2 += lam*np.multiply(w2,w2)
+		dldw1 += lam*2*w1
+		dldw2 += lam*2*w2
 		
 		w1 = w1 - dldw1*rate
 		w2 = w2 - dldw2*rate
+		print error
+		
+	return w1,w2
+	
+def s_gradient_descent(X,Y,w1,w2,rate,lam):
+	classes = 3
+	for i in range(0,200):
+		error = 0
+		for c in range(0,X.shape[0]):
+			x = X[c,:].T
+			y = np.zeros((classes,1))
+			y[Y[c,0]-1,0] = 1
+			o2,d1,d2,e = feedforward(x,y,w1,w2)
+			d1 += lam*2*w1
+			d2 += lam*2*w2
+			
+			w1 = w1 - d1*rate
+			w2 = w2 - d2*rate
+			error += e
 		print error
 		
 	return w1,w2
@@ -115,16 +134,17 @@ def error_rate(X,Y,w1,w2):
 		o2,d1,d2,e = feedforward(x,y,w1,w2)
 		val = np.argmax(o2)
 		if(val != Y[c,0]-1):
-			print o2
-			print Y[c,0]
 			error += 1
 	return 1.0*error/(X.shape[0])
 	
+w1 = np.ones((2,3))
+w2 = np.ones((3,3))
+w1,w2 = gradient_descent(X,Y,w1,w2,0.06,0)
+print error_rate(X,Y,w1,w2)
 
 w1 = np.ones((2,3))
 w2 = np.ones((3,3))
-
-w1,w2 = gradient_descent(X,Y,w1,w2,0.06,0)
+w1,w2 = s_gradient_descent(X,Y,w1,w2,0.01,0.0)
 print error_rate(X,Y,w1,w2)
 
 '''
