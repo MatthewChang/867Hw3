@@ -23,10 +23,6 @@ with open(train, 'rb') as csvfile:
 # use deep copy here to make cvxopt happy
 X = A[:, 0:2].copy()
 Y = A[:, 2:3].copy()
-
-print Y
-
-
 def feedforward(X, Y, w1, w2):
 
 	def sigmoid(Z):
@@ -60,7 +56,7 @@ def feedforward(X, Y, w1, w2):
 			
 	dldz1 = np.multiply(dldo1,np.multiply(o1,1-o1))			
 		
-	dldw1 = np.zeros(w2.shape)
+	dldw1 = np.zeros(w1.shape)
 	for i in range(0,dldw1.shape[0]):
 		for j in range(0,dldw1.shape[1]):
 			dldw1[i,j] = X[j,0]*dldz1[i,0]
@@ -76,8 +72,8 @@ def back_prop_train(X,Y,w1,w2,rate,y):
 		o2,dldw1,dldw2,error = feedforward(X,Y,w1,w2)
 		
 		#regularization
-		dldw1 += y*np.multiply(dldw1,dldw1)
-		dldw2 += y*np.multiply(dldw2,dldw2)
+		dldw1 += y*np.multiply(w1,w1)
+		dldw2 += y*np.multiply(w2,w2)
 		
 		print error
 		w1 = w1 - dldw1*rate
@@ -85,9 +81,56 @@ def back_prop_train(X,Y,w1,w2,rate,y):
 		
 	return w1,w2
 
+def gradient_descent(X,Y,w1,w2,rate,lam):
+	classes = 3
+	for i in range(0,100):
+		dldw1 = np.zeros(w1.shape)
+		dldw2 = np.zeros(w2.shape)
+		error = 0
+		for c in range(0,X.shape[0]):
+			x = X[c,:].T
+			y = np.zeros((classes,1))
+			y[Y[c,0]-1,0] = 1
+			o2,d1,d2,e = feedforward(x,y,w1,w2)
+			dldw1 += d1
+			dldw2 += d2
+			error += e
+		
+		dldw1 += lam*np.multiply(w1,w1)
+		dldw2 += lam*np.multiply(w2,w2)
+		
+		w1 = w1 - dldw1*rate
+		w2 = w2 - dldw2*rate
+		print error
+		
+	return w1,w2
+	
+def error_rate(X,Y,w1,w2):
+	classes = 3
+	error = 0
+	for c in range(0,X.shape[0]):
+		x = X[c,:].T
+		y = np.zeros((classes,1))
+		y[Y[c,0]-1,0] = 1
+		o2,d1,d2,e = feedforward(x,y,w1,w2)
+		val = np.argmax(o2)
+		if(val != Y[c,0]-1):
+			print o2
+			print Y[c,0]
+			error += 1
+	return 1.0*error/(X.shape[0])
+	
 
+w1 = np.ones((2,3))
+w2 = np.ones((3,3))
+
+w1,w2 = gradient_descent(X,Y,w1,w2,0.06,0)
+print error_rate(X,Y,w1,w2)
+
+'''
 X = np.matrix("1;1")
 Y = np.matrix("0;1")
 w1 = 1*np.ones((2,3))
 w2 = 1*np.ones((2,3))
-print back_prop_train(X,Y,w1,w2,0.2,1)
+print back_prop_train(X,Y,w1,w2,0.2,0)
+'''
