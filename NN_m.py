@@ -11,8 +11,26 @@ w1: m x d matrix where m is the number of hidden units
 w2: k x m matrix
 '''
 name = "2"
-train = 'toy_multiclass_'+name+'_train.csv'
-#train = 'mnist_train.csv'
+#train = 'toy_multiclass_'+name+'_train.csv'
+train = 'mnist_train.csv'
+A = None
+with open(train, 'rb') as csvfile:
+    spamreader = csv.reader(csvfile, delimiter=',', quotechar='|')
+    for row in spamreader:
+        row = [float(x) for x in row]
+        if(A is None):
+            A = np.matrix(row)
+        else:
+            A = np.concatenate((A,np.matrix(row)),axis=0)
+# use deep copy here to make cvxopt happy
+print A.shape
+X = A[:, 0:784].copy()
+Y = A[:, 784:785].copy()
+#X = A[:, 0:2].copy()
+#Y = A[:, 2:3].copy()
+
+#train = 'toy_multiclass_'+name+'_test.csv'
+train = 'mnist_test.csv'
 A = None
 with open(train, 'rb') as csvfile:
     spamreader = csv.reader(csvfile, delimiter=',', quotechar='|')
@@ -24,28 +42,13 @@ with open(train, 'rb') as csvfile:
             A = np.concatenate((A,np.matrix(row)),axis=0)
 # use deep copy here to make cvxopt happy
 
-X = A[:, 0:2].copy()
-Y = A[:, 2:3].copy()
-
-train = 'toy_multiclass_'+name+'_test.csv'
-
-A = None
-with open(train, 'rb') as csvfile:
-    spamreader = csv.reader(csvfile, delimiter=',', quotechar='|')
-    for row in spamreader:
-        row = [float(x) for x in row]
-        if(A is None):
-            A = np.matrix(row)
-        else:
-            A = np.concatenate((A,np.matrix(row)),axis=0)
-# use deep copy here to make cvxopt happy
-
-X_test = A[:, 0:2].copy()
-Y_test = A[:, 2:3].copy()
+X_test = A[:, 0:784].copy()
+Y_test = A[:, 784:785].copy()
 
 #X = A[:, 0:784].copy()
 #Y = A[:, 784:785].copy()
-possible_classes = 3
+
+possible_classes = 6
 print A.shape
 def feedforward(X, Y, w1, w2):
 
@@ -96,7 +99,7 @@ def back_prop_train(X,Y,w1,w2,rate,y):
 	return w1,w2
 
 def gradient_descent(X,Y,w1,w2,rate,lam):
-        momentum = 0
+        momentum = 0.3
 
         old_dldw1 =  np.zeros(w1.shape)
         old_dldw2 =  np.zeros(w2.shape)
@@ -128,10 +131,10 @@ def gradient_descent(X,Y,w1,w2,rate,lam):
 		w2 = w2 - dldw2*rate
 		
                 train_er = error_rate(X,Y,w1,w2)
-                test_er = error_rate(X_test,Y_test,w1,w2)
+                #test_er = error_rate(X_test,Y_test,w1,w2)
                 print train_er
-                train_errors.append(train_er)
-                test_errors.append(test_er)
+                #train_errors.append(train_er)
+                #test_errors.append(test_er)
                 
 		
 	return w1,w2,train_errors,test_errors
@@ -139,13 +142,23 @@ def gradient_descent(X,Y,w1,w2,rate,lam):
 def s_gradient_descent(X,Y,w1,w2,rate,lam):
         train_errors = []
         test_errors = []
+        momentum = 0.3
+        old_dldw1 =  np.zeros(w1.shape)
+        old_dldw2 =  np.zeros(w2.shape)
 	for i in range(0,200):
 		error = 0
 		for c in range(0,X.shape[0]):
+                        
 			x = X[c,:].T
 			y = np.zeros((possible_classes,1))
 			y[Y[c,0]-1,0] = 1
 			o2,d1,d2,e = feedforward(x,y,w1,w2)
+			d1 += old_dldw1 * momentum
+                        d2 += old_dldw2 * momentum
+
+                        old_dldw1 = d1
+                        old_dldw2 = d2
+                        
 			d1 += lam*2*w1
 			d2 += lam*2*w2
 			
@@ -153,10 +166,10 @@ def s_gradient_descent(X,Y,w1,w2,rate,lam):
 			w2 = w2 - d2*rate
 			error += e
 		train_er = error_rate(X,Y,w1,w2)
-                test_er = error_rate(X_test,Y_test,w1,w2)
+                #test_er = error_rate(X_test,Y_test,w1,w2)
                 print train_er
-                train_errors.append(train_er)
-                test_errors.append(test_er)
+                #train_errors.append(train_er)
+                #test_errors.append(test_er)
                 
 		
 		
@@ -173,6 +186,14 @@ def error_rate(X,Y,w1,w2):
 		if(val != Y[c,0]-1):
 			error += 1
 	return 1.0*error/(X.shape[0])
+
+
+
+
+hidden = 10
+w1 = np.ones((hidden,X.shape[1]+1))
+w2 = np.ones((possible_classes,hidden+1))
+w1,w2,train_e,test_e = s_gradient_descent(X,Y,w1,w2,0.1,0)
 
 
 
@@ -200,10 +221,6 @@ for i in xvals:
 #pl.axis([1,10,0.3,0.5])
 #pl.show()
 
-hidden = 2
-w1 = np.ones((hidden,X.shape[1]+1))
-w2 = np.ones((possible_classes,hidden+1))
-w1,w2,train_e,test_e = s_gradient_descent(X,Y,w1,w2,0.01,0.001)
 
 
 pl.plot(range(1,len(train_e)+1),train_e)
