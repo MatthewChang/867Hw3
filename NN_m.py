@@ -99,13 +99,13 @@ def back_prop_train(X,Y,w1,w2,rate,y):
 	return w1,w2
 
 def gradient_descent(X,Y,w1,w2,rate,lam):
-        momentum = 0.3
+	momentum = 0.3
 
-        old_dldw1 =  np.zeros(w1.shape)
-        old_dldw2 =  np.zeros(w2.shape)
-        train_errors = []
-        test_errors = []
-	for i in range(0,200):
+	old_dldw1 =  np.zeros(w1.shape)
+	old_dldw2 =  np.zeros(w2.shape)
+	train_errors = []
+	test_errors = []
+	for i in range(0,100):
                 #rate = max(2/(i+10)**(1.0/2),rate_in)
 		dldw1 = old_dldw1 * momentum
 		dldw2 = old_dldw2 * momentum
@@ -140,36 +140,33 @@ def gradient_descent(X,Y,w1,w2,rate,lam):
 	return w1,w2,train_errors,test_errors
 	
 def s_gradient_descent(X,Y,w1,w2,rate,lam):
-        train_errors = []
-        test_errors = []
-        momentum = 0.3
-        old_dldw1 =  np.zeros(w1.shape)
-        old_dldw2 =  np.zeros(w2.shape)
-	for i in range(0,200):
-		error = 0
-		for c in range(0,X.shape[0]):
-                        
+	train_errors = []
+	test_errors = []
+	momentum = 0
+	old_dldw1 =  np.zeros(w1.shape)
+	old_dldw2 =  np.zeros(w2.shape)
+	for i in range(0,100):
+		for c in range(0,X.shape[0]):                        
 			x = X[c,:].T
 			y = np.zeros((possible_classes,1))
 			y[Y[c,0]-1,0] = 1
 			o2,d1,d2,e = feedforward(x,y,w1,w2)
 			d1 += old_dldw1 * momentum
-                        d2 += old_dldw2 * momentum
+			d2 += old_dldw2 * momentum
 
-                        old_dldw1 = d1
-                        old_dldw2 = d2
+			old_dldw1 = d1
+			old_dldw2 = d2
                         
 			d1 += lam*2*w1
 			d2 += lam*2*w2
 			
 			w1 = w1 - d1*rate
 			w2 = w2 - d2*rate
-			error += e
 		train_er = error_rate(X,Y,w1,w2)
-                #test_er = error_rate(X_test,Y_test,w1,w2)
-                print train_er
-                #train_errors.append(train_er)
-                #test_errors.append(test_er)
+		test_er = error_rate(X_test,Y_test,w1,w2)
+		print train_er
+		train_errors.append(train_er)
+		test_errors.append(test_er)
                 
 		
 		
@@ -191,15 +188,19 @@ def error_rate(X,Y,w1,w2):
 
 
 hidden = 10
-w1 = np.ones((hidden,X.shape[1]+1))
-w2 = np.ones((possible_classes,hidden+1))
-w1,w2,train_e,test_e = s_gradient_descent(X,Y,w1,w2,0.1,0)
+#w1 = np.ones((hidden,X.shape[1]+1))
+#w2 = np.ones((possible_classes,hidden+1))
+w1 = np.random.rand(hidden,X.shape[1]+1)-0.50
+w2 = np.random.rand(possible_classes,hidden+1)
+w1,w2,train_e,test_e = s_gradient_descent(X,Y,w1,w2,0.1,0.001)
+pl.plot(range(1,len(train_e)+1),train_e)
+pl.plot(range(1,len(test_e)+1),test_e)
+pl.show()
 
-
-
+'''
 xvals = range(1,15)
 e = []
-'''
+
 for i in xvals:
     hidden = i
     w1 = np.ones((hidden,X.shape[1]+1))
@@ -222,10 +223,11 @@ for i in xvals:
 #pl.show()
 
 
-
+'''
 pl.plot(range(1,len(train_e)+1),train_e)
 pl.plot(range(1,len(test_e)+1),test_e)
 pl.show()
+'''
 
 '''
 def score(x):
