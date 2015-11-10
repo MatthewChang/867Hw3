@@ -9,9 +9,9 @@ Y: k by 1 array where k is number of classifications
 w1: m x d matrix where m is the number of hidden units
 w2: k x m matrix
 '''
-#name = "1"
-#train = 'toy_multiclass_'+name+'_train.csv'
-train = 'mnist_train.csv'
+name = "1"
+train = 'toy_multiclass_'+name+'_train.csv'
+#train = 'mnist_train.csv'
 A = None
 with open(train, 'rb') as csvfile:
     spamreader = csv.reader(csvfile, delimiter=',', quotechar='|')
@@ -22,10 +22,14 @@ with open(train, 'rb') as csvfile:
         else:
             A = np.concatenate((A,np.matrix(row)),axis=0)
 # use deep copy here to make cvxopt happy
-print A.shape
+
 X = A[:, 0:2].copy()
 Y = A[:, 2:3].copy()
 
+#X = A[:, 0:784].copy()
+#Y = A[:, 784:785].copy()
+possible_classes = 3
+print A.shape
 def feedforward(X, Y, w1, w2):
 
 	def sigmoid(Z):
@@ -85,14 +89,13 @@ def back_prop_train(X,Y,w1,w2,rate,y):
 	return w1,w2
 
 def gradient_descent(X,Y,w1,w2,rate,lam):
-	classes = 3
-	for i in range(0,100):
+	for i in range(0,400):
 		dldw1 = np.zeros(w1.shape)
 		dldw2 = np.zeros(w2.shape)
 		error = 0
 		for c in range(0,X.shape[0]):
 			x = X[c,:].T
-			y = np.zeros((classes,1))
+			y = np.zeros((possible_classes,1))
 			y[Y[c,0]-1,0] = 1
 			o2,d1,d2,e = feedforward(x,y,w1,w2)
 			dldw1 += d1
@@ -101,20 +104,20 @@ def gradient_descent(X,Y,w1,w2,rate,lam):
 		
 		dldw1 += lam*2*w1
 		dldw2 += lam*2*w2
+		#print dldw2
 		
 		w1 = w1 - dldw1*rate
 		w2 = w2 - dldw2*rate
-		print error
+		print error_rate(X,Y,w1,w2)
 		
 	return w1,w2
 	
 def s_gradient_descent(X,Y,w1,w2,rate,lam):
-	classes = 3
 	for i in range(0,100):
 		error = 0
 		for c in range(0,X.shape[0]):
 			x = X[c,:].T
-			y = np.zeros((classes,1))
+			y = np.zeros((possible_classes,1))
 			y[Y[c,0]-1,0] = 1
 			o2,d1,d2,e = feedforward(x,y,w1,w2)
 			d1 += lam*2*w1
@@ -123,7 +126,7 @@ def s_gradient_descent(X,Y,w1,w2,rate,lam):
 			w1 = w1 - d1*rate
 			w2 = w2 - d2*rate
 			error += e
-		print error
+		print error_rate(X,Y,w1,w2)
 		
 	return w1,w2
 	
@@ -132,23 +135,27 @@ def error_rate(X,Y,w1,w2):
 	error = 0
 	for c in range(0,X.shape[0]):
 		x = X[c,:].T
-		y = np.zeros((classes,1))
+		y = np.zeros((possible_classes,1))
 		y[Y[c,0]-1,0] = 1
 		o2,d1,d2,e = feedforward(x,y,w1,w2)
 		val = np.argmax(o2)
 		if(val != Y[c,0]-1):
 			error += 1
 	return 1.0*error/(X.shape[0])
-	
-w1 = np.ones((2,3))
-w2 = np.ones((3,3))
-w1,w2 = gradient_descent(X,Y,w1,w2,0.06,0)
+
+hidden = 7	
+w1 = np.ones((hidden,X.shape[1]+1))
+w2 = np.ones((possible_classes,hidden+1))
+w1,w2 = gradient_descent(X,Y,w1,w2,0.04,0)
 print error_rate(X,Y,w1,w2)
 
-w1 = np.ones((2,3))
-w2 = np.ones((3,3))
-w1,w2 = s_gradient_descent(X,Y,w1,w2,0.01,0.0)
+'''
+hidden = 2
+w1 = np.ones((hidden,X.shape[1]+1))
+w2 = np.ones((possible_classes,hidden+1))
+w1,w2 = s_gradient_descent(X,Y,w1,w2,0.1,0.0)
 print error_rate(X,Y,w1,w2)
+'''
 
 '''
 X = np.matrix("1;1")
