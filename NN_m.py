@@ -2,6 +2,7 @@ import numpy as np
 import math
 import csv
 from scipy import special,  optimize
+import pylab as pl
 '''
 INPUTS
 X: d by 1 array
@@ -9,7 +10,7 @@ Y: k by 1 array where k is number of classifications
 w1: m x d matrix where m is the number of hidden units
 w2: k x m matrix
 '''
-name = "2"
+name = "1"
 train = 'toy_multiclass_'+name+'_train.csv'
 #train = 'mnist_train.csv'
 A = None
@@ -79,9 +80,15 @@ def back_prop_train(X,Y,w1,w2,rate,y):
 	return w1,w2
 
 def gradient_descent(X,Y,w1,w2,rate,lam):
-	for i in range(0,400):
-		dldw1 = np.zeros(w1.shape)
-		dldw2 = np.zeros(w2.shape)
+        momentum = 0
+
+        old_dldw1 =  np.zeros(w1.shape)
+        old_dldw2 =  np.zeros(w2.shape)
+        errors = []
+	for i in range(0,200):
+                #rate = max(2/(i+10)**(1.0/2),rate_in)
+		dldw1 = old_dldw1 * momentum
+		dldw2 = old_dldw2 * momentum
 		error = 0
 		for c in range(0,X.shape[0]):
 			x = X[c,:].T
@@ -91,19 +98,26 @@ def gradient_descent(X,Y,w1,w2,rate,lam):
 			dldw1 += d1
 			dldw2 += d2
 			error += e
+
 		
 		dldw1 += lam*2*w1
 		dldw2 += lam*2*w2
+
+		old_dldw1 = dldw1
+		old_dldw2 = dldw2
 		#print dldw2
 		
 		w1 = w1 - dldw1*rate
 		w2 = w2 - dldw2*rate
-		print error_rate(X,Y,w1,w2)
+                er = error_rate(X,Y,w1,w2)
+                print er
+                errors.append(er)
 		
-	return w1,w2
+	return w1,w2,errors
 	
 def s_gradient_descent(X,Y,w1,w2,rate,lam):
-	for i in range(0,500):
+        errors = []
+	for i in range(0,200):
 		error = 0
 		for c in range(0,X.shape[0]):
 			x = X[c,:].T
@@ -116,12 +130,13 @@ def s_gradient_descent(X,Y,w1,w2,rate,lam):
 			w1 = w1 - d1*rate
 			w2 = w2 - d2*rate
 			error += e
-		print error_rate(X,Y,w1,w2)
+		er = error_rate(X,Y,w1,w2)
+                print er
+                errors.append(er)
 		
-	return w1,w2
+	return w1,w2,errors
 	
 def error_rate(X,Y,w1,w2):
-	classes = 3
 	error = 0
 	for c in range(0,X.shape[0]):
 		x = X[c,:].T
@@ -133,12 +148,42 @@ def error_rate(X,Y,w1,w2):
 			error += 1
 	return 1.0*error/(X.shape[0])
 
-hidden = 10	
+
+
+'''
+for i in xvals:
+    hidden = i
+    w1 = np.ones((hidden,X.shape[1]+1))
+    w2 = np.ones((possible_classes,hidden+1))
+    w1,w2 = gradient_descent(X,Y,w1,w2,0.05,0)
+    er = error_rate(X,Y,w1,w2)
+    print er
+    e.append(er)
+'''
+hidden = 2
 w1 = np.ones((hidden,X.shape[1]+1))
 w2 = np.ones((possible_classes,hidden+1))
-w1,w2 = gradient_descent(X,Y,w1,w2,0.01,0)
-print error_rate(X,Y,w1,w2)
+w1,w2,errors = s_gradient_descent(X,Y,w1,w2,0.05,0)
 
+pl.plot(range(1,len(errors)+1),errors)
+pl.show()
+
+'''
+def score(x):
+    x = np.matrix(x).T
+    #print x.shape
+    o2,_,_,_ = feedforward(x, np.zeros((possible_classes,1)), w1, w2)
+    return np.argmax(o2)
+
+xx,yy = np.meshgrid(np.arange(-1.5,1,0.01),np.arange(-1.5,1.5,0.01))
+zz = np.array([score(x) for x in np.c_[xx.ravel(),yy.ravel()]])
+zz = zz.reshape(xx.shape)
+pl.figure()
+pl.scatter(X[:,0],X[:,1],c =np.array(Y),cmap = pl.cm.cool,s=50)
+pl.contour(xx,yy,zz,[0.5,1.5],colors = 'green',linestyles = 'solid', linewidths = 2)
+pl.show()
+#print error_rate(X,Y,w1,w2)
+'''
 '''
 hidden = 2
 w1 = np.ones((hidden,X.shape[1]+1))
